@@ -5,7 +5,7 @@ import { ViteRuntime } from "vite/runtime"
  * @Author: Jace
  * @Date: 2024-03-23 17:18:52
  * @LastEditors: Jace
- * @LastEditTime: 2024-03-24 22:23:02
+ * @LastEditTime: 2024-03-25 20:50:41
  */
 function createTextNode (text) {
   return {
@@ -38,6 +38,7 @@ function render (el, container) {
       children: [el]
     }
   }
+  root = nextWorkOfUnit
 
 
   // const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
@@ -56,6 +57,7 @@ function render (el, container) {
 
   // container.append(dom)
 }
+let root = null;
 let nextWorkOfUnit = null
 function workLoop (deadline) {
 
@@ -70,8 +72,27 @@ function workLoop (deadline) {
     shouldYield = deadline.timeRemaining() < 1
   }
 
+  if (!nextWorkOfUnit && root) {
+    //
+    commitRoot()
+  }
+
   requestIdleCallback(workLoop)
 }
+
+function commitRoot () {
+  commitWork(root.child);
+  root = null
+}
+function commitWork (fiber) {
+  if (!fiber) return
+  fiber.parent.dom.append(fiber.dom)
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
+}
+
+
+
 function createDom (type) {
   return type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(type)
 }
@@ -111,7 +132,7 @@ function performworkOfUnit (fiber) {
   if (!fiber.dom) {
     const dom = (fiber.dom = createDom(fiber.type))
 
-    fiber.parent.dom.append(dom)
+    // fiber.parent.dom.append(dom)
 
 
     // 2.处理props
