@@ -5,7 +5,7 @@ import { ViteRuntime } from "vite/runtime"
  * @Author: Jace
  * @Date: 2024-03-23 17:18:52
  * @LastEditors: Jace
- * @LastEditTime: 2024-03-25 21:50:44
+ * @LastEditTime: 2024-03-25 22:04:16
  */
 function createTextNode (text) {
   return {
@@ -112,22 +112,44 @@ function initChildren (fiber, children) {
     prevChild = newFiber
   })
 }
+function updateFunctionComponent (fiber) {
+  // 3.转换链表 设置好指针
+  const children = [fiber.type(fiber.props)]
+  initChildren(fiber, children)
+}
+
+function updateHostComponent (fiber) {
+  if (!fiber.dom) {
+    const dom = (fiber.dom = createDom(fiber.type))
+    // 2.处理props
+    updateProps(dom, fiber.props)
+  }
+  // 3.转换链表 设置好指针
+  const children = fiber.props.children
+  initChildren(fiber, children)
+}
+
 
 
 function performworkOfUnit (fiber) {
   const isFunctionComponent = typeof fiber.type === 'function'
 
-  if (!isFunctionComponent) {
-    // 1.创建dom
-    if (!fiber.dom) {
-      const dom = (fiber.dom = createDom(fiber.type))
-      // 2.处理props
-      updateProps(dom, fiber.props)
-    }
+  // if (!isFunctionComponent) {
+  //   // 1.创建dom
+  //   if (!fiber.dom) {
+  //     const dom = (fiber.dom = createDom(fiber.type))
+  //     // 2.处理props
+  //     updateProps(dom, fiber.props)
+  //   }
+  // }
+  // // 3.转换链表 设置好指针
+  // const children = isFunctionComponent ? [fiber.type(fiber.props)] : fiber.props.children
+  // initChildren(fiber, children)
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
   }
-  // 3.转换链表 设置好指针
-  const children = isFunctionComponent ? [fiber.type(fiber.props)] : fiber.props.children
-  initChildren(fiber, children)
 
   // 4. 返回下一个要执行的任务
   if (fiber.child) {
